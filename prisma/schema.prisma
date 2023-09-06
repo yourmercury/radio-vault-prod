@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  email String @unique
+  firstName String @default("")
+  lastName String @default("")
+  signature String @unique
+  age Int? @default(0)
+  socialMedia String[] @default([])
+  avatar String? @default("")
+  storageURL String?
+  stageName String?
+  metadata Json?
+  streams Int? @default(0)
+  role String?
+  dateOfBirth String?
+  regions String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Vault {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  controller String @db.ObjectId
+  storageURL String
+  title String
+  description String
+  metadata Json
+  contracts String[] @default([])
+  regions String[] @default([])
+  shares Int
+  streams Int
+  deploymentCount Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Deployed {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  controller String @db.ObjectId
+  vaultId String @db.ObjectId
+  contractAddress String
+  txHash String
+  chain Chain
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User_yearly_stream {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  streams Int?
+  jan MonthlyStream?
+  feb MonthlyStream?
+  mar MonthlyStream?
+  apr MonthlyStream?
+  may MonthlyStream?
+  jun MonthlyStream?
+  jul MonthlyStream?
+  aug MonthlyStream?
+  sep MonthlyStream?
+  oct MonthlyStream?
+  nov MonthlyStream?
+  dec MonthlyStream?
+  lastStream DateTime @updatedAt
+  firstStream DateTime @default(now())
+  year String
+}
+
+model Whitelist {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  service String
+  status Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Vault_yearly_stream {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  vaultId String @db.ObjectId
+  controller String @db.ObjectId
+  streams Int?
+  jan MonthlyStream?
+  feb MonthlyStream?
+  mar MonthlyStream?
+  apr MonthlyStream?
+  may MonthlyStream?
+  jun MonthlyStream?
+  jul MonthlyStream?
+  aug MonthlyStream?
+  sep MonthlyStream?
+  oct MonthlyStream?
+  nov MonthlyStream?
+  dec MonthlyStream?
+  lastStream DateTime @updatedAt
+  firstStream DateTime @default(now())
+  year String
+}
+
+type MonthlyStream {
+  streams Int
+  regions String[]
+  lastStream DateTime
+  firstStream DateTime
+}
+
+type Chain {
+  id Int
+  name String
+  explorer String
+}

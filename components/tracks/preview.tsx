@@ -1,43 +1,65 @@
 "use client";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { TextColors } from "../styleGuide";
 import Icons from "../icons/icons";
-import { Text12, Text14, Text16, Text20, Text24 } from "../texts/textSize";
+import {
+  Text12,
+  Text14,
+  Text16,
+  Text20,
+  Text24,
+  TextLink,
+} from "../texts/textSize";
 import { Vault } from "@/types";
 import EmbedComp from "../embedComp";
 import { VaultContext } from "@/context/VaultContext";
 import { getIPFSLink } from "@/utils/NFTStorage";
 import { getMonth } from "@/utils/utils";
 import { useRouter } from "next/navigation";
+import EmptyState from "../emptyState";
+import Blur from "../blur";
+import ModalBackground from "../modalBackground";
+import ButtonComp, { Button2Comp } from "../button";
+import { toast } from "react-toastify";
+import { ResponseCodes } from "@/utils/responseCodes";
 
 export default function TrackPreview({ vault }: { vault: Vault | undefined }) {
   console.log(vault);
   const { mode } = useContext(ThemeContext);
   const { tracks } = useContext(VaultContext);
+  const [modal, setModal] = useState(false);
 
-  if (!vault) return <div>No vault found</div>;
+  if (!vault)
+    return (
+      <div className="flex justify-center my-10">
+        <EmptyState title={"No Vault"}>
+          You have not uploaded any vault, go to{" "}
+          <TextLink link="/upload-vault">Create</TextLink> to upload a vault
+        </EmptyState>
+      </div>
+    );
 
   let totalStreams = 0;
   let start = 0;
   // console.log(vault)
-  let startMonth = vault.vys? new Date(vault.vys.firstStream).getMonth() : 0;
+  let startMonth = vault.vys ? new Date(vault.vys.firstStream).getMonth() : 0;
 
-  for(let i=startMonth; i<13; i++){
-    if(!vault.vys) break;
+  for (let i = startMonth; i < 13; i++) {
+    if (!vault.vys) break;
     console.log(getMonth(i));
     let a = vault.vys[getMonth(i)];
-    if(!a) continue;
+    if (!a) continue;
     totalStreams += a?.streams;
     start++;
-    if(i == new Date().getMonth()){
+    if (i == new Date().getMonth()) {
       break;
     }
   }
 
-  let mAvrg = Math.round(totalStreams /(start)) || 0;
-  console.log(totalStreams)
+  let mAvrg = Math.round(totalStreams / start) || 0;
+  console.log(totalStreams);
   // const sMonth = vault.vys[getMonth(new Date().getMonth())]?.streams || 0;
 
   return (
@@ -94,7 +116,7 @@ export default function TrackPreview({ vault }: { vault: Vault | undefined }) {
             </div>
 
             <div>
-              <Icons icon="chart_yellow"/>
+              <Icons icon="chart_yellow" />
             </div>
           </div>
 
@@ -137,7 +159,7 @@ export default function TrackPreview({ vault }: { vault: Vault | undefined }) {
             className="flex items-start border p-mid rounded-lg"
             style={{ borderColor: mode.primary }}
           >
-            <Icons icon="delete" className="mr-5"/>
+            <Icons icon="delete" className="mr-5" />
             <div className="flex justify-between flex-1 flex-col md:flex-row">
               <div className="flex flex-col md:mr-5 mb-2 md:mb-0 flex-1">
                 <Text16 className="font-bold" light="black">
@@ -151,6 +173,13 @@ export default function TrackPreview({ vault }: { vault: Vault | undefined }) {
               <div
                 className="py-sm px-big rounded-lg w-fit flex items-center "
                 style={{ background: mode.primary }}
+                onClick={() => {
+                  if(vault.deploymentCount > 0){
+                    toast.error("Cannot delete vault if already deployed at least once");
+                    return;
+                  }
+                  setModal(true);
+                }}
               >
                 <Icons icon="delete_dark" noToggle className="mr-2" />
                 <Text14>Delete track</Text14>
@@ -160,12 +189,41 @@ export default function TrackPreview({ vault }: { vault: Vault | undefined }) {
         </div>
       </div>
 
+      {modal&&<AreYouSure action={(b) => {
+        setModal(false);
+        if(b){
+          toast.promise(async()=>{
+            let res = await fetch(`/api/vault/${vault.id}`, {method: "DELETE"});
+            if(res.status == ResponseCodes.FORBIDDEN) {
+              throw("Cannot delete vault if already deployed at least once");
+            }else if(res.status != ResponseCodes.OK){
+              throw("Ooops! Something went wrong");
+            }
+          }, 
+
+          {
+            pending: "Deleting Vault",
+            success: {
+              render: ({data})=>{
+                return "Deleted succesfully"
+              }
+            },
+            error: {
+              render: ({data})=>{
+                return typeof data == "string" ? data : "Ooops! Something went wrong"
+              }
+            }
+          }
+          )
+        }
+      }} />}
+
       <div className="flex-[0.5] ml-5 pt-5 hidden md:block">
         <Text16 light="black">Tracks</Text16>
 
         <div className="mt-6">
           {tracks?.map((track, index) => (
-            <Track mode={mode} track={track} index={index} key={track.id}/>
+            <Track mode={mode} track={track} index={index} key={track.id} />
           ))}
         </div>
       </div>
@@ -173,14 +231,22 @@ export default function TrackPreview({ vault }: { vault: Vault | undefined }) {
   );
 }
 
-function Track({ mode, track, index }: { mode: any, index: number, track: Vault }) {
-  let router =  useRouter()
+function Track({
+  mode,
+  track,
+  index,
+}: {
+  mode: any;
+  index: number;
+  track: Vault;
+}) {
+  let router = useRouter();
   return (
     <div
       className="flex items-center flex-[1.8] border py-[10px] px-[20px] rounded-lg mb-3"
       style={{ borderColor: mode.border }}
-      onClick={()=>{
-        router.push("/tracks/"+track.id);
+      onClick={() => {
+        router.push("/tracks/" + track.id);
       }}
     >
       <img
@@ -216,5 +282,34 @@ function Track({ mode, track, index }: { mode: any, index: number, track: Vault 
         </div>
       </div>
     </div>
+  );
+}
+
+function AreYouSure({ action }: { action: (b: boolean) => any }) {
+  const { mode } = useContext(ThemeContext);
+  return (
+    <ModalBackground>
+      <div className="flex w-screen h-screen justify-center items-center relative">
+        <div
+          className="mx-10 p-big relative w-[300px] shadow-xl border rounded-xl"
+          style={{ borderColor: mode.border, background: mode.background }}
+        >
+          <Text16 className="font-[600]" light={"black"}>Are you sure?</Text16>
+          <div className="flex mt-5">
+            <ButtonComp className="mr-5" onClick={() => action(true)}>
+              <Text14>Yes</Text14>
+            </ButtonComp>
+            <Button2Comp
+              className="w-full "
+              onClick={() => {
+                action(false);
+              }}
+            >
+              <Text14 light="black">No</Text14>
+            </Button2Comp>
+          </div>
+        </div>
+      </div>
+    </ModalBackground>
   );
 }

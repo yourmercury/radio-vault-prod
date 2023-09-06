@@ -1,6 +1,8 @@
 "use client";
 
-import { Text32 } from "@/components/texts/textSize";
+import EmptyState from "@/components/emptyState";
+import LoadingDots from "@/components/loading";
+import { Text32, TextLink } from "@/components/texts/textSize";
 import TrackPreview from "@/components/tracks/preview";
 import { Vault } from "@/types";
 import { useEffect, useState } from "react";
@@ -41,17 +43,20 @@ export default function Tracks({ params }: { params: { id: string } }) {
 
     if(error) {
         return (
-            <Text32 light={"black"}>
-                No Vault found
-            </Text32>
+            <div className="p-big flex justify-center">
+                <EmptyState title="Not found">
+                    The Vault does not exist or Something went wrong.
+                    <TextLink link="/tracks"> Click</TextLink> to go to Tracks
+                </EmptyState>
+            </div>
         )
     }
 
     if(!error && !vault) {
         return (
-            <Text32 light={"black"}>
-                Loading
-            </Text32>
+            <div className="flex justify-center p-big">
+                <LoadingDots />
+            </div>
         )
     }
 

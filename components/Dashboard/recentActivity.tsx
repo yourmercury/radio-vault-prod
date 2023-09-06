@@ -4,6 +4,7 @@ import InputComp from "../input";
 import { TextColors } from "../styleGuide";
 import { Text14, Text16, TextLink } from "../texts/textSize";
 import EmptyState from "../emptyState";
+import { useRouter } from "next/navigation";
 
 export default function RecentActivites({
   mode,
@@ -73,10 +74,14 @@ export default function RecentActivites({
 }
 
 function TableVault({ mode, vault }: { mode: any, vault: any }) {
+  const router = useRouter();
   return (
     <div
-      className="flex items-center py-3 border-b"
+      className="flex items-center py-3 border-b cursor-pointer"
       style={{ borderColor: mode.return("#E3E3E8", TextColors.g700) }}
+      onClick={()=>{
+        router.push("/tracks/"+vault.id)
+      }}
     >
       <div className="flex items-center flex-1">
         <img
